@@ -222,6 +222,32 @@ static void getCodeMemoryCapability(void) {
     }
 }
 
+// KEFIR: returns true if the NRO loaded into g_heapAddr is built against
+// pre-4.10.0 libnx (i.e. lacks the "LNY2" magic at MOD0+0x34 or has a zero
+// version field there). Such NROs use TLS+0x108 / TLS+0x110 as their own
+// user TLS slots 0 and 1, and would crash if Atmosphere's kernel kept
+// writing to those slots.
+static bool kefirNroIsLegacyTlsAbi(const u8* nro_base, size_t mapped_size) {
+    if (nro_base == NULL || mapped_size < 0x80) {
+        return true;
+    }
+    u32 mod_offset = 0;
+    memcpy(&mod_offset, nro_base + 4, sizeof(mod_offset));
+    if (mod_offset == 0 || (u64)mod_offset + 0x3C > (u64)mapped_size) {
+        return true;
+    }
+    static const u8 lny2_magic_ref[4] = { 'L', 'N', 'Y', '2' };
+    u32 lny2_version = 0;
+    if (memcmp(nro_base + mod_offset + 0x34, lny2_magic_ref, sizeof(lny2_magic_ref)) != 0) {
+        return true;
+    }
+    memcpy(&lny2_version, nro_base + mod_offset + 0x38, sizeof(lny2_version));
+    if (lny2_version == 0) {
+        return true;
+    }
+    return false;
+}
+
 void NX_NORETURN loadNro(void) {
     NroHeader* header = NULL;
     size_t rw_size = 0;
@@ -467,6 +493,19 @@ void NX_NORETURN loadNro(void) {
     g_nroSize = nro_size;
 
     svcBreak(BreakReason_NotificationOnlyFlag | BreakReason_PostLoadDll, g_nroAddr, nro_size);
+
+    // KEFIR: if this NRO was built against pre-4.10.0 libnx, ask the
+    // (Atmosphere) kernel to stop writing thread_cpu_time at TLS+0x108 and
+    // thread_handle at TLS+0x110 for this process. Modern hbloader / sphaira
+    // is itself built against new libnx (USER_TLS_BEGIN=0x180) so it does not
+    // care about those slots, but the legacy NRO we are about to jump to
+    // uses them as USER_TLS slots 0 and 1. The SVC is a no-op (returns an
+    // error which we ignore) on stock kernels or non-Atmosphere kernels.
+    if (kefirNroIsLegacyTlsAbi((const u8*)g_heapAddr, total_size)) {
+        svcSetProcessLegacyTlsAbi(CUR_PROCESS_HANDLE, true);
+    } else {
+        svcSetProcessLegacyTlsAbi(CUR_PROCESS_HANDLE, false);
+    }
 
     // write exit detection
     strcpy(g_nextArgv, EXIT_DETECTION_STR);
