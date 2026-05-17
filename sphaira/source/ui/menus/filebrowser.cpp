@@ -310,7 +310,7 @@ ForwarderForm::ForwarderForm(const FileAssocEntry& assoc, const RomDatabaseIndex
     }
 
     const auto name = m_nro.nacp.lang.name + std::string{" | "} + file_name;
-    const auto author = m_nacp.lang[0].author;
+    const auto author = m_nacp.lang_data.lang[0].author;
     const auto version = m_nacp.display_version;
     const auto icon = m_assoc.path;
 
