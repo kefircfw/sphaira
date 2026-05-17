@@ -465,15 +465,17 @@ void patch_npdm(std::vector<u8>& npdm, const NpdmPatch& patch) {
 
 void patch_nacp(NacpStruct& nacp, const NcapPatch& patch) {
     // patch title
+    // KEFIR: NacpStruct's lang[] array was moved into the lang_data union
+    // (switchbrew/libnx PR #716); access path changed, byte layout did not.
     if (!patch.name.empty()) {
-        for (auto& lang : nacp.lang) {
+        for (auto& lang : nacp.lang_data.lang) {
             std::strncpy(lang.name, patch.name.c_str(), sizeof(lang.name)-1);
         }
     }
 
     // patch author
     if (!patch.name.empty()) {
-        for (auto& lang : nacp.lang) {
+        for (auto& lang : nacp.lang_data.lang) {
             std::strncpy(lang.author, patch.author.c_str(), sizeof(lang.author)-1);
         }
     }
