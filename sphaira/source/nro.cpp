@@ -1,4 +1,5 @@
 #include "nro.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "defines.hpp"
 #include "evman.hpp"
 #include "app.hpp"

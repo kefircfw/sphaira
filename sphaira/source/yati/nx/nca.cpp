@@ -1,4 +1,5 @@
 #include "yati/nx/nca.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "yati/nx/crypto.hpp"
 #include "yati/nx/es.hpp"
 #include "yati/nx/nxdumptool_rsa.h"

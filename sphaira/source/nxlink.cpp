@@ -1,5 +1,6 @@
 // very quick and dirty way to talk to nxlink-pc
 #include "nxlink.h"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "defines.hpp"
 #include "nro.hpp"
 #include "log.hpp"

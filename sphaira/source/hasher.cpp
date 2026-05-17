@@ -1,4 +1,5 @@
 #include "hasher.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "app.hpp"
 #include "threaded_file_transfer.hpp"
 #include <mbedtls/md5.h>

@@ -1,4 +1,5 @@
 #include "ui/scrolling_text.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "ui/nvg_util.hpp"
 #include "app.hpp"
 #include <cstdarg>
