@@ -212,7 +212,7 @@
                 "svcUnassignedAD": "0xAD",
                 "svcUnassignedAE": "0xAE",
                 "svcUnassignedAF": "0xAF",
-                "svcUnassignedB0": "0xB0",
+                "svcSetProcessLegacyTlsAbi": "0xB0",
                 "svcUnassignedB1": "0xB1",
                 "svcUnassignedB2": "0xB2",
                 "svcUnassignedB3": "0xB3",

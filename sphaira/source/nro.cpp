@@ -6,6 +6,7 @@
 
 #include <switch.h>
 #include <vector>
+#include <cstdio>
 #include <cstring>
 #include <string_view>
 #include <minIni.h>
@@ -150,10 +151,60 @@ auto nro_get_icon_internal(fs::File* f, u64 size, u64 offset) -> std::vector<u8>
     return icon;
 }
 
+// KEFIR: returns true if the NRO at `path` was built against pre-4.10.0 libnx
+// (i.e. lacks the "LNY2" magic at MOD0+0x34, or has a zero version field).
+// We use this to decide whether to ask the (Atmosphere) kernel to suppress
+// thread_cpu_time at TLS+0x108 and thread_handle at TLS+0x110 writes for the
+// process we are about to hand off to via envSetNextLoad. Errors / non-NRO
+// files are conservatively treated as legacy so a broken launch does not
+// leave the process in modern-ABI mode if the previous one was legacy.
+auto kefir_nro_is_legacy_tls_abi(const std::string& path) -> bool {
+    // Strip sdmc: prefix if present so fopen works.
+    const char* p = path.c_str();
+    if (path.starts_with("sdmc:")) {
+        p += 5;
+    }
+    FILE* f = std::fopen(p, "rb");
+    if (!f) {
+        return true;
+    }
+    NroStart start{};
+    if (std::fread(&start, sizeof(start), 1, f) != 1) {
+        std::fclose(f);
+        return true;
+    }
+    if (std::fseek(f, start.mod_offset + 0x34, SEEK_SET) != 0) {
+        std::fclose(f);
+        return true;
+    }
+    u32 lny2_magic = 0;
+    u32 lny2_version = 0;
+    if (std::fread(&lny2_magic, sizeof(lny2_magic), 1, f) != 1) {
+        std::fclose(f);
+        return true;
+    }
+    if (std::fread(&lny2_version, sizeof(lny2_version), 1, f) != 1) {
+        std::fclose(f);
+        return true;
+    }
+    std::fclose(f);
+    constexpr u32 kLny2Magic = static_cast<u32>('L') | (static_cast<u32>('N') << 8) | (static_cast<u32>('Y') << 16) | (static_cast<u32>('2') << 24);
+    return lny2_magic != kLny2Magic || lny2_version == 0;
+}
+
 auto launch_internal(const std::string& path, const std::string& argv) -> Result {
+    // KEFIR: tell the (Atmosphere) kernel whether the NRO we are about to hand
+    // off to is built against pre-4.10.0 libnx. The flag is per-process, so it
+    // applies to the hbloader process that will re-exec into the next NRO
+    // (sphaira-hbl, nx-hbloader baked into a forwarder NSP, etc.) and persists
+    // for the rest of the process's life. On a stock / non-Atmosphere kernel
+    // the SVC simply returns an error which we ignore.
+    const bool legacy = kefir_nro_is_legacy_tls_abi(path);
+    static_cast<void>(svcSetProcessLegacyTlsAbi(CUR_PROCESS_HANDLE, legacy));
+
     R_TRY(envSetNextLoad(path.c_str(), argv.c_str()));
 
-    log_write("set launch with path: %s argv: %s\n", path.c_str(), argv.c_str());
+    log_write("set launch with path: %s argv: %s (legacy_tls_abi=%d)\n", path.c_str(), argv.c_str(), legacy ? 1 : 0);
 
     evman::push(evman::LaunchNroEventData{path, argv});
     R_SUCCEED();
