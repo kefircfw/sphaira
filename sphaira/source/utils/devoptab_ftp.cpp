@@ -59,7 +59,12 @@ private:
     static void ftp_parse_mlsd(std::string_view chunk, DirEntries& out);
     static bool ftp_parse_mlist(std::string_view chunk, struct stat* st);
 
-    std::pair<bool, long> ftp_quote(std::span<const std::string> commands, bool is_dir, std::vector<char>* response_data = nullptr);
+    // KEFIR: was std::span<const std::string>. GCC 15 in C++20 mode rejects the
+    // braced-init-list calls (ftp_quote({"FEAT"}, ...) etc.) because the
+    // std::span(std::initializer_list<T>) constructor only exists in C++26
+    // (P2447R6). Use std::initializer_list directly — all current call sites
+    // either pass a brace list or can be trivially adapted to one.
+    std::pair<bool, long> ftp_quote(std::initializer_list<std::string> commands, bool is_dir, std::vector<char>* response_data = nullptr);
     int ftp_dirlist(const std::string& path, DirEntries& out);
     int ftp_stat(const std::string& path, struct stat* st, bool is_dir);
     int ftp_remove_file_folder(const std::string& path, bool is_dir);
@@ -238,7 +243,7 @@ void Device::ftp_parse_mlsd(std::string_view chunk, DirEntries& out) {
     }
 }
 
-std::pair<bool, long> Device::ftp_quote(std::span<const std::string> commands, bool is_dir, std::vector<char>* response_data) {
+std::pair<bool, long> Device::ftp_quote(std::initializer_list<std::string> commands, bool is_dir, std::vector<char>* response_data) {
     const auto url = build_url("/", is_dir);
 
     curl_slist* cmdlist{};
@@ -359,11 +364,9 @@ int Device::ftp_unlink(const std::string& path) {
 int Device::ftp_rename(const std::string& old_path, const std::string& new_path, bool is_dir) {
     const auto url = build_url("/", is_dir);
 
-    std::vector<std::string> commands;
-    commands.emplace_back("RNFR " + old_path);
-    commands.emplace_back("RNTO " + new_path);
-
-    const auto [success, response_code] = ftp_quote(commands, is_dir);
+    // KEFIR: pass the two-element command list directly as a brace-init-list;
+    // ftp_quote now takes std::initializer_list<std::string> instead of span.
+    const auto [success, response_code] = ftp_quote({"RNFR " + old_path, "RNTO " + new_path}, is_dir);
     if (!success) {
         return -EIO;
     }
