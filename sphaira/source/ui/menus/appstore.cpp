@@ -1235,7 +1235,7 @@ void Menu::ScanHomebrew() {
                     if (e.name == "hbmenu") {
                         NacpStruct nacp;
                         if (R_SUCCEEDED(nro_get_nacp(e.binary, nacp))) {
-                            filtered = std::strcmp(nacp.lang[0].name, "nx-hbmenu");
+                            filtered = std::strcmp(nacp.lang_data.lang[0].name, "nx-hbmenu");
                         }
                     }
                     // ignore single retroarch core.

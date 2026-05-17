@@ -96,16 +96,14 @@ auto GetXciSizeFromRomSize(u8 rom_size) -> s64 {
     return 0;
 }
 
-struct DebugEventInfo {
-    u32 event_type;
-    u32 flags;
-    u64 thread_id;
-    u64 title_id;
-    u64 process_id;
-    char process_name[12];
-    u32 mmu_flags;
-    u8 _0x30[0x10];
-};
+// KEFIR: dropped sphaira's local DebugEventInfo struct — newer libnx
+// (switchbrew/libnx) now provides a fully-typed DebugEventInfo of its own
+// (a tagged union). Using libnx's definition avoids "incompatible pointer
+// type" errors when calling svcGetDebugEvent, and also matches the kernel
+// event size (the old local struct was 0x40 bytes; libnx's is larger because
+// of the union, so passing the old one risked a stack overwrite).
+// The original code read event_info.title_id; in libnx's struct the same
+// field for DebugEventType_CreateProcess is info.create_process.program_id.
 
 auto GetDumpTypeStr(u8 type) -> const char* {
     switch (type) {
@@ -1261,7 +1259,16 @@ Result Menu::GcGetSecurityInfo(GameCardSecurityInformation& out) {
         if (R_SUCCEEDED(svcDebugActiveProcess(&handle, pids[i]))) {
             ON_SCOPE_EXIT(svcCloseHandle(handle));
 
-            if (R_FAILED(svcGetDebugEvent(&event_info, handle)) || title_id != event_info.title_id) {
+            if (R_FAILED(svcGetDebugEvent(&event_info, handle))) {
+                continue;
+            }
+            // KEFIR: title_id field moved out of the common header in libnx's
+            // typed DebugEventInfo; for the CreateProcess event it lives under
+            // info.create_process.program_id. The first event returned for a
+            // freshly debug-attached process is always CreateProcess, which is
+            // what this loop relies on (same assumption as the old code).
+            if (event_info.type != DebugEventType_CreateProcess ||
+                title_id != event_info.info.create_process.program_id) {
                 continue;
             }
 

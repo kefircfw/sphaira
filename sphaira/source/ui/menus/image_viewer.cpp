@@ -5,6 +5,10 @@
 #include "i18n.hpp"
 #include "image.hpp"
 
+// KEFIR: explicit <algorithm> include for std::clamp; transitive include
+// disappeared with newer libnx/STL headers.
+#include <algorithm>
+
 namespace sphaira::ui::menu::imageview {
 namespace {
 
