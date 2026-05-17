@@ -1,0 +1,24 @@
+KEFIR: adapt to switchbrew/libnx#716 which moved NacpStruct.lang into
+NacpStruct.lang_data.lang (a union member, see switch/nacp.h).
+
+Without this fix libnxtc fails to build against any libnx that contains
+commit fdf3c870 "Update NacpStruct to match switchbrew wiki (#716)".
+
+--- a/source/nxtc.c
++++ b/source/nxtc.c
+@@ -1062,13 +1062,13 @@
+ {
+     if (!nacp) return NULL;
+ 
+-    const NacpLanguageEntry *entry = &(nacp->lang[g_nacpLangTable[g_systemLanguage]]);
++    const NacpLanguageEntry *entry = &(nacp->lang_data.lang[g_nacpLangTable[g_systemLanguage]]);
+ 
+     if (!entry->name[0] && !entry->author[0])
+     {
+         for(u8 i = 0; i < 16; i++)
+         {
+-            entry = &(nacp->lang[i]);
++            entry = &(nacp->lang_data.lang[i]);
+             if (entry->name[0] || entry->author[0]) break;
+         }
+     }

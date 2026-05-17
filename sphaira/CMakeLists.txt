@@ -246,6 +246,10 @@ FetchContent_Declare(zstd
 FetchContent_Declare(libnxtc
     GIT_REPOSITORY https://github.com/ITotalJustice/libnxtc.git
     GIT_TAG 88ce3d8
+    # KEFIR: nacp->lang was moved into nacp->lang_data.lang in upstream libnx
+    # (switchbrew/libnx#716). libnxtc upstream hasn't been updated; patch in place.
+    PATCH_COMMAND ${CMAKE_COMMAND} -DKEFIR_PATCH=${CMAKE_SOURCE_DIR}/patches/libnxtc-nacp-lang.patch -DKEFIR_SRC=<SOURCE_DIR> -P ${CMAKE_SOURCE_DIR}/patches/apply_kefir_patch.cmake
+    UPDATE_DISCONNECTED TRUE
 )
 
 FetchContent_Declare(nvjpg
@@ -307,6 +311,10 @@ if (ENABLE_LIBUSBDVD)
     FetchContent_Declare(libusbdvd
         GIT_REPOSITORY https://github.com/proconsule/libusbdvd.git
         GIT_TAG 3cb0613
+        # KEFIR: libnx now provides enum usb_request_recipient / usb_request_type
+        # itself (switchbrew/libnx#704). libusbdvd's local copies collide; drop them.
+        PATCH_COMMAND ${CMAKE_COMMAND} -DKEFIR_PATCH=${CMAKE_SOURCE_DIR}/patches/libusbdvd-drop-libnx-enums.patch -DKEFIR_SRC=<SOURCE_DIR> -P ${CMAKE_SOURCE_DIR}/patches/apply_kefir_patch.cmake
+        UPDATE_DISCONNECTED TRUE
     )
 
     FetchContent_MakeAvailable(libusbdvd)
