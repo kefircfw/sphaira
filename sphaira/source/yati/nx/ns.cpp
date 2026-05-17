@@ -1,4 +1,5 @@
 #include "yati/nx/ns.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "yati/nx/service_guard.h"
 #include "defines.hpp"
 

@@ -1,4 +1,5 @@
 #include "ui/menus/ftp_menu.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "app.hpp"
 #include "defines.hpp"
 #include "log.hpp"

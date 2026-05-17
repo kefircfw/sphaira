@@ -1,4 +1,5 @@
 #include "minizip_helper.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include <minizip/unzip.h>
 #include <minizip/zip.h>
 #include <cstring>

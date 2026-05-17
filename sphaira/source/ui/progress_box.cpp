@@ -1,4 +1,5 @@
 #include "ui/progress_box.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "ui/option_box.hpp"
 #include "ui/nvg_util.hpp"
 #include "app.hpp"

@@ -1,4 +1,5 @@
 #include "ui/menus/ghdl.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "ui/menus/homebrew.hpp"
 
 #include "ui/sidebar.hpp"

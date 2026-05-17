@@ -1,4 +1,5 @@
 #include "utils/audio.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "utils/profile.hpp"
 #include "utils/thread.hpp"
 #include "utils/devoptab_common.hpp"

@@ -1,4 +1,5 @@
 #include "ui/menus/install_stream_menu_base.hpp"
+#include <algorithm>  // KEFIR: explicit include for std::* algorithms; newer libstdc++ no longer pulls this in transitively
 #include "yati/yati.hpp"
 #include "app.hpp"
 #include "defines.hpp"
