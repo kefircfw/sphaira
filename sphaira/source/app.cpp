@@ -1864,13 +1864,29 @@ App::App(const char* argv0) {
     // not sure if these are meant to be deleted or not...
     {
         SCOPED_TIMESTAMP("font init");
-        PlFontData font_standard, font_extended, font_lang;
-        plGetSharedFontByType(&font_standard, PlSharedFontType_Standard);
-        plGetSharedFontByType(&font_extended, PlSharedFontType_NintendoExt);
+        PlFontData font_standard{}, font_extended{}, font_lang{};
+        Result rc_standard = plGetSharedFontByType(&font_standard, PlSharedFontType_Standard);
+        Result rc_extended = plGetSharedFontByType(&font_extended, PlSharedFontType_NintendoExt);
 
-        auto standard_font = nvgCreateFontMem(this->vg, "Standard", (unsigned char*)font_standard.address, font_standard.size, 0);
-        auto extended_font = nvgCreateFontMem(this->vg, "Extended", (unsigned char*)font_extended.address, font_extended.size, 0);
-        nvgAddFallbackFontId(this->vg, standard_font, extended_font);
+        if (R_FAILED(rc_standard) || font_standard.address == nullptr || font_standard.size == 0) {
+            log_write("plGetSharedFontByType(Standard) failed: 0x%x size=%zu addr=%p\n",
+                rc_standard, font_standard.size, font_standard.address);
+        }
+        if (R_FAILED(rc_extended) || font_extended.address == nullptr || font_extended.size == 0) {
+            log_write("plGetSharedFontByType(NintendoExt) failed: 0x%x size=%zu addr=%p\n",
+                rc_extended, font_extended.size, font_extended.address);
+        }
+
+        int standard_font = -1, extended_font = -1;
+        if (font_standard.address && font_standard.size) {
+            standard_font = nvgCreateFontMem(this->vg, "Standard", (unsigned char*)font_standard.address, font_standard.size, 0);
+        }
+        if (font_extended.address && font_extended.size) {
+            extended_font = nvgCreateFontMem(this->vg, "Extended", (unsigned char*)font_extended.address, font_extended.size, 0);
+        }
+        if (standard_font >= 0 && extended_font >= 0) {
+            nvgAddFallbackFontId(this->vg, standard_font, extended_font);
+        }
 
         constexpr PlSharedFontType lang_font[] = {
             PlSharedFontType_ChineseSimplified,
@@ -1880,11 +1896,13 @@ App::App(const char* argv0) {
         };
 
         for (auto type : lang_font) {
-            if (R_SUCCEEDED(plGetSharedFontByType(&font_lang, type))) {
+            if (R_SUCCEEDED(plGetSharedFontByType(&font_lang, type)) && font_lang.address && font_lang.size) {
                 char name[32];
                 std::snprintf(name, sizeof(name), "Lang_%u", font_lang.type);
                 auto lang_font = nvgCreateFontMem(this->vg, name, (unsigned char*)font_lang.address, font_lang.size, 0);
-                nvgAddFallbackFontId(this->vg, standard_font, lang_font);
+                if (standard_font >= 0 && lang_font >= 0) {
+                    nvgAddFallbackFontId(this->vg, standard_font, lang_font);
+                }
             } else {
                 log_write("failed plGetSharedFontByType(%d)\n", type);
             }
